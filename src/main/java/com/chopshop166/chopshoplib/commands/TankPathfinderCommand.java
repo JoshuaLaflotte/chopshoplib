@@ -15,8 +15,8 @@ import jaci.pathfinder.modifiers.TankModifier;
 public final class TankPathfinderCommand extends Command {
 
     private final TankDriveSubsystem subsystem;
-    private EncoderFollower leftEnc;
-    private EncoderFollower rightEnc;
+    private final EncoderFollower leftEnc;
+    private final EncoderFollower rightEnc;
 
     /**
      * Build a {@link TankPathfinderCommand} from individual {@link Waypoint}s.
@@ -79,10 +79,10 @@ public final class TankPathfinderCommand extends Command {
             final Trajectory trajectory = Pathfinder.generate(points, config);
             final TankModifier modifier = subsystem.getModifier(trajectory);
 
-            EncoderFollower leftEnc = new EncoderFollower(modifier.getLeftTrajectory());
+            final EncoderFollower leftEnc = new EncoderFollower(modifier.getLeftTrajectory());
             subsystem.configureLeftEncoderFollower(leftEnc);
 
-            EncoderFollower rightEnc = new EncoderFollower(modifier.getRightTrajectory());
+            final EncoderFollower rightEnc = new EncoderFollower(modifier.getRightTrajectory());
             subsystem.configureRightEncoderFollower(rightEnc);
             return new TankPathfinderCommand(name, subsystem, leftEnc, rightEnc);
         }
@@ -96,8 +96,8 @@ public final class TankPathfinderCommand extends Command {
      * @param leftEnc   The left encoder follower.
      * @param rightEnc  The right encoder follower.
      */
-    protected TankPathfinderCommand(String name, TankDriveSubsystem subsystem, EncoderFollower leftEnc,
-            EncoderFollower rightEnc) {
+    protected TankPathfinderCommand(final String name, final TankDriveSubsystem subsystem,
+            final EncoderFollower leftEnc, final EncoderFollower rightEnc) {
         super(name, subsystem);
         this.subsystem = subsystem;
         this.leftEnc = leftEnc;

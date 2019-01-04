@@ -50,7 +50,7 @@ public abstract class TankDriveSubsystem extends Subsystem {
      * 
      * @param follower The follower to modify.
      */
-    public void configureRightEncoderFollower(EncoderFollower follower) {
+    public void configureRightEncoderFollower(final EncoderFollower follower) {
         configureLeftEncoderFollower(follower);
     }
 
@@ -75,7 +75,7 @@ public abstract class TankDriveSubsystem extends Subsystem {
      * @param config The configuration for the path.
      * @return The builder object.
      */
-    public TankPathfinderCommand.Builder path(Trajectory.Config config) {
+    public TankPathfinderCommand.Builder path(final Trajectory.Config config) {
         return new TankPathfinderCommand.Builder(config);
     }
 }
