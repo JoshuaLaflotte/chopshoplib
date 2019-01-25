@@ -2,7 +2,10 @@ package com.chopshop166.chopshoplib.commands
 
 import edu.wpi.first.wpilibj.command.Command
 import edu.wpi.first.wpilibj.command.CommandGroup
+import edu.wpi.first.wpilibj.command.ConditionalCommand
+import edu.wpi.first.wpilibj.command.InstantCommand
 import edu.wpi.first.wpilibj.command.PrintCommand
+import edu.wpi.first.wpilibj.command.WaitCommand
 import edu.wpi.first.wpilibj.command.WaitForChildren
 
 fun sequence(name : String, items : SequentialBuilder.() -> Unit) : Command {
@@ -21,13 +24,46 @@ public abstract class BuilderBase {
 
     val cmds = arrayListOf<Pair<Command, Double>>()
 
-    operator fun Command.unaryPlus() {
-        cmds.add(Pair(this, Double.NaN))
+    fun addCommand(command : Command, timeout : Double = Double.NaN) {
+        cmds.add(Pair(command, timeout))
     }
 
-    infix fun Command.timeout(timeout : Double) {
-        cmds.add(Pair(this, timeout))
+    operator fun Command.unaryPlus() {
+        addCommand(this)
     }
+
+    operator fun String.unaryPlus() {
+        addCommand(PrintCommand(this))
+    }
+
+    infix fun Command.timeout(timeout : kotlin.Double) {
+        addCommand(this, timeout)
+    }
+
+    fun wait(time : Double) {
+        addCommand(WaitCommand(time))
+    }
+
+    fun exec(timeout : Double = Double.NaN, block : () -> Unit) {
+        addCommand(InstantCommand(block), timeout)
+    }
+
+    infix fun (()->Boolean).implies(onTrue : Command) {
+        val lambda = this
+        addCommand(object : ConditionalCommand(onTrue) {
+            override fun condition() = lambda()
+        })
+    }
+
+    infix fun (()->Boolean).implies(commands : Pair<Command, Command>) {
+        val (onTrue, onFalse) = commands
+        val lambda = this
+        addCommand(object : ConditionalCommand(onTrue, onFalse) {
+            override fun condition() = lambda()
+        })
+    }
+
+    infix fun Command.otherwise(onFalse : Command) = Pair(this, onFalse)
 
     abstract fun build() : Command
 }
@@ -79,18 +115,23 @@ class ParallelBuilder(val waitAfter : Boolean = true) : BuilderBase() {
 
 fun testSequence() : Command =
     sequence("Sample") {
-        +PrintCommand("A")
+        +"A"
         parallel {
-            +PrintCommand("B")
+            +"B"
             PrintCommand("C") timeout 2.0
             sequential {
-                +PrintCommand("F1")
-                +PrintCommand("F2")
+                +"F1"
+                wait(3.14)
+                +"F2"
+                exec {
+                    System.out.println("2 + 2 = " + (2 + 2))
+                }
             }
         }
-        +PrintCommand("D")
+        +"D"
         PrintCommand("E") timeout 3.0
-        +PrintCommand("G")
+        +"G"
+        {-> true} implies (PrintCommand("It's true") otherwise PrintCommand("It's False"))
     }
 
 fun testChain() : Command =
@@ -100,7 +141,11 @@ fun testChain() : Command =
              TimeoutCommand(2.0, PrintCommand("C")),
              CommandChain().apply {
                  then(PrintCommand("F1"))
+                 then(WaitCommand(3.14))
                  then(PrintCommand("F2"))
+                 then(InstantCommand() {
+                     System.out.println("2 + 2 = " + (2 + 2))
+                 })
              })
         then(PrintCommand("D"))
         then(3.0, PrintCommand("E"))
