@@ -16,6 +16,10 @@ fun sequence(name : String, items : SequentialBuilder.() -> Unit) : Command {
     return cmd
 }
 
+fun wait(time : Double) = WaitCommand(time)
+
+fun exec(block : () -> Unit) = InstantCommand(block)
+
 @DslMarker
 annotation class CommandBuilderMarker
 
@@ -40,27 +44,19 @@ public abstract class BuilderBase {
         addCommand(this, timeout)
     }
 
-    fun wait(time : Double) {
-        addCommand(WaitCommand(time))
-    }
-
-    fun exec(timeout : Double = Double.NaN, block : () -> Unit) {
-        addCommand(InstantCommand(block), timeout)
-    }
-
-    infix fun (()->Boolean).implies(onTrue : Command) {
+    infix fun (()->Boolean).implies(onTrue : Command) : Command {
         val lambda = this
-        addCommand(object : ConditionalCommand(onTrue) {
+        return object : ConditionalCommand(onTrue) {
             override fun condition() = lambda()
-        })
+        }
     }
 
-    infix fun (()->Boolean).implies(commands : Pair<Command, Command>) {
+    infix fun (()->Boolean).implies(commands : Pair<Command, Command>) : Command {
         val (onTrue, onFalse) = commands
         val lambda = this
-        addCommand(object : ConditionalCommand(onTrue, onFalse) {
+        return object : ConditionalCommand(onTrue, onFalse) {
             override fun condition() = lambda()
-        })
+        }
     }
 
     infix fun Command.otherwise(onFalse : Command) = Pair(this, onFalse)
